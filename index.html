@@ -12,7 +12,6 @@
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300&display=swap");
     </style>
-
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -21,106 +20,170 @@
       <div class="subtitulo">Poner Fecha</div>
     </div>
 
+    <div class="barra-acciones" id="barra-acciones" style="display: none;">
+      <button id="btn-descargar-todo" class="btn-accion">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Descargar Galería
+      </button>
+      <button id="btn-ver-favoritos" class="btn-accion">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+        Ver Favoritos
+      </button>
+    </div>
+
     <div id="cargando-texto" class="cargando">⏳ Cargando recuerdos...</div>
     <div class="grid-galeria" id="contenedor-galeria"></div>
 
     <script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
 
     <script>
-      // 1. TU ENLACE UNIVERSAL
-      const SCRIPT_UNIVERSAL =
-        "https://script.google.com/macros/s/AKfycbxeMqsw0aAJ8f6yDc_xNkb_akwUIMCVd8TvuS3LRSyvl0JRbQWTWo1RfQ3LD9whiA3J/exec";
-
-      // 2. ⚠️ EL ID DE LA CARPETA DE ESTA BODA EN GOOGLE DRIVE
+      const SCRIPT_UNIVERSAL = "https://script.google.com/macros/s/AKfycbxeMqsw0aAJ8f6yDc_xNkb_akwUIMCVd8TvuS3LRSyvl0JRbQWTWo1RfQ3LD9whiA3J/exec";
       const ID_CARPETA_CLIENTE = "1ewHBjTwgO4TouKRZUYW-eiUT2iouLdPl";
-
-      const GOOGLE_SCRIPT_URL =
-        SCRIPT_UNIVERSAL + "?idCarpeta=" + ID_CARPETA_CLIENTE;
+      const GOOGLE_SCRIPT_URL = SCRIPT_UNIVERSAL + "?idCarpeta=" + ID_CARPETA_CLIENTE;
 
       const contenedor = document.getElementById("contenedor-galeria");
       const cargandoTexto = document.getElementById("cargando-texto");
+      const barraAcciones = document.getElementById("barra-acciones");
+      const btnVerFavoritos = document.getElementById("btn-ver-favoritos");
+      const btnDescargarTodo = document.getElementById("btn-descargar-todo");
 
+      // --- Variables del Scroll Infinito ---
+      let todasLasFotos = [];
+      let mostrandoFavoritos = false;
+      let lightboxInstancia = null;
+      
+      let listaActual = []; 
+      let indiceActual = 0;
+      const FOTOS_POR_LOTE = 30; // 🪄 Cuántas fotos se cargan a la vez
+      let columnasGlobales = [];
+
+      // 1. Cargamos las fotos desde Google Script
       fetch(GOOGLE_SCRIPT_URL)
         .then((response) => response.json())
         .then((fotos) => {
           cargandoTexto.style.display = "none";
 
-          // Comprobamos primero si hay fotos para evitar que la página se rompa
           if (!fotos || fotos.length === 0) {
-            contenedor.innerHTML =
-              "<p style='width: 100%; font-size: 14px; color: #ccc;'>Aún no hay fotos en esta carpeta.</p>";
+            contenedor.innerHTML = "<p style='width: 100%; font-size: 14px; color: #ccc;'>Aún no hay fotos en esta carpeta.</p>";
             return;
           }
 
-          // Invertimos el orden DESPUÉS de confirmar que sí hay fotos
           fotos.reverse();
+          todasLasFotos = fotos; 
+          
+          barraAcciones.style.display = "flex"; 
+          iniciarGaleria(todasLasFotos); 
+        })
+        .catch((error) => {
+          cargandoTexto.innerText = "❌ Error al cargar la galería. Verifica tu conexión.";
+          cargandoTexto.style.color = "#ff6b6b";
+        });
 
-          // Calculamos las columnas (2 en celular, 3 en pantallas más grandes)
-          let numColumnas = window.innerWidth > 768 ? 3 : 2;
-          let columnas = [];
+      // 2. Preparamos la galería vacía y las columnas
+      function iniciarGaleria(listaFotos) {
+        contenedor.innerHTML = ""; 
+        listaActual = listaFotos;
+        indiceActual = 0;
 
-          // Creamos las columnas HTML
-          for (let i = 0; i < numColumnas; i++) {
-            let col = document.createElement("div");
-            col.className = "columna-masonry";
-            contenedor.appendChild(col);
-            columnas.push(col);
+        if (listaFotos.length === 0) {
+            contenedor.innerHTML = "<p style='width: 100%; font-size: 16px; color: #777; margin-top: 40px;'>Aún no tienes fotos guardadas en favoritos.</p>";
+            return;
+        }
+
+        let numColumnas = window.innerWidth > 768 ? 3 : 2;
+        columnasGlobales = [];
+
+        for (let i = 0; i < numColumnas; i++) {
+          let col = document.createElement("div");
+          col.className = "columna-masonry";
+          contenedor.appendChild(col);
+          columnasGlobales.push(col);
+        }
+
+        if (lightboxInstancia) {
+            lightboxInstancia.destroy();
+            lightboxInstancia = null;
+        }
+        
+        // 🪄 Disparamos el primer lote de 30 fotos
+        cargarSiguienteLote();
+      }
+
+      // 3. 🪄 El motor que carga las fotos poco a poco
+      function cargarSiguienteLote() {
+        let fragmento = listaActual.slice(indiceActual, indiceActual + FOTOS_POR_LOTE);
+        
+        if (fragmento.length === 0) return; // Si ya no hay fotos, no hace nada
+
+        let numColumnas = columnasGlobales.length;
+
+        fragmento.forEach((foto, i) => {
+          let globalIndex = indiceActual + i; // Para mantener el orden izquierda-derecha
+          
+          const miniatura = `https://drive.google.com/thumbnail?id=${foto.id}&sz=w400`;
+          const altaRes = `https://drive.google.com/thumbnail?id=${foto.id}&sz=w1600`;
+
+          const enlace = document.createElement("a");
+          enlace.href = altaRes;
+          enlace.className = "foto-link glightbox";
+          enlace.setAttribute("data-gallery", "galeria-boda");
+          enlace.setAttribute("data-type", "image");
+          enlace.setAttribute("data-id", foto.id);
+
+          const img = document.createElement("img");
+          img.src = miniatura;
+          img.className = "foto-img";
+          img.loading = "lazy"; // Carga perezosa nativa extra
+          img.alt = "Foto del evento";
+
+          enlace.appendChild(img);
+
+          let turnoColumna = globalIndex % numColumnas;
+          columnasGlobales[turnoColumna].appendChild(enlace);
+        });
+
+        indiceActual += FOTOS_POR_LOTE;
+
+        // Iniciamos el Lightbox o lo recargamos para que detecte las nuevas fotos
+        if (!lightboxInstancia) {
+            iniciarEventosLightbox();
+        } else {
+            lightboxInstancia.reload();
+        }
+      }
+
+      // 4. 🪄 Evento: Detectar cuando la clienta hace scroll hacia abajo
+      window.addEventListener('scroll', () => {
+          // Si está a 800 píxeles de llegar al fondo de la página, carga más fotos (para que sea invisible el retraso)
+          if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 800) {
+              if (indiceActual < listaActual.length) {
+                  cargarSiguienteLote();
+              }
           }
+      });
 
-          // Repartimos las fotos de izquierda a derecha
-          fotos.forEach((foto, index) => {
-            const miniatura = `https://drive.google.com/thumbnail?id=${foto.id}&sz=w400`;
-
-            // ⬅️ ¡AQUÍ ESTÁ LA MAGIA CORREGIDA! 
-            // Esto usa la imagen pura a 1600px para que el Lightbox la pueda MOSTRAR súper rápido
-            const altaRes = `https://drive.google.com/thumbnail?id=${foto.id}&sz=w1600`;
-
-            const enlace = document.createElement("a");
-            enlace.href = altaRes;
-            enlace.className = "foto-link glightbox";
-            enlace.setAttribute("data-gallery", "galeria-boda");
-            enlace.setAttribute("data-type", "image");
-            enlace.setAttribute("data-id", foto.id); // Guardamos el ID secreto
-
-            const img = document.createElement("img");
-            img.src = miniatura;
-            img.className = "foto-img";
-            img.loading = "lazy";
-            img.alt = "Foto del evento";
-
-            enlace.appendChild(img);
-
-            // Asignamos la foto a su columna correspondiente (Izquierda a Derecha)
-            let turnoColumna = index % numColumnas;
-            columnas[turnoColumna].appendChild(enlace);
-          });
-
-          // Iniciamos GLightbox
-          const lightbox = GLightbox({
+      // 5. Configuración de GLightbox y Botones VIP
+      function iniciarEventosLightbox() {
+          lightboxInstancia = GLightbox({
             touchNavigation: true,
             loop: true,
-            zoomable: false, // Apagamos el zoom para que el clic avance
+            zoomable: false,
           });
 
-          // Función: Clic para avanzar y Botones Extra
-          lightbox.on("slide_after_load", (data) => {
+          lightboxInstancia.on("slide_after_load", (data) => {
             const slide = data.slideNode;
-
-            // 1. Clic en la foto para avanzar
             const imagenAbierta = slide.querySelector(".gslide-media img");
+            
             if (imagenAbierta) {
               imagenAbierta.style.cursor = "pointer";
               imagenAbierta.onclick = function () {
-                lightbox.nextSlide();
+                lightboxInstancia.nextSlide();
               };
             }
 
-            // 2. Extraemos el ID de esta foto específica
             const photoId = data.trigger.getAttribute("data-id");
 
-            // 3. Verificamos si ya pusimos los botones para no duplicarlos
             if (!slide.querySelector(".botones-vip")) {
-              // Contenedor de nuestros botones
               const contenedorBotones = document.createElement("div");
               contenedorBotones.className = "botones-vip";
               contenedorBotones.style.position = "absolute";
@@ -132,85 +195,96 @@
               contenedorBotones.style.gap = "15px";
               contenedorBotones.style.zIndex = "99999";
 
-              // --- BOTÓN DE DESCARGA ---
+              const iconoDescarga = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: -3px; margin-right: 5px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+              const iconoCorazonVacio = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: -3px; margin-right: 5px;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
+              const iconoCorazonRojo = `<svg width="16" height="16" viewBox="0 0 24 24" fill="#ff4b4b" stroke="#ff4b4b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: -3px; margin-right: 5px;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
+
               const btnDescargar = document.createElement("button");
-              btnDescargar.innerHTML = "⬇️ Descargar";
+              btnDescargar.innerHTML = iconoDescarga + " Descargar";
               btnDescargar.style.padding = "10px 20px";
               btnDescargar.style.borderRadius = "30px";
               btnDescargar.style.border = "none";
-              btnDescargar.style.backgroundColor = "#d4af37"; // Dorado
-              btnDescargar.style.color = "#1a1a1a";
-              btnDescargar.style.fontWeight = "bold";
+              btnDescargar.style.backgroundColor = "rgba(0,0,0,0.7)";
+              btnDescargar.style.color = "#fff";
+              btnDescargar.style.fontWeight = "400";
+              btnDescargar.style.letterSpacing = "1px";
               btnDescargar.style.cursor = "pointer";
-              btnDescargar.style.boxShadow = "0 4px 10px rgba(0,0,0,0.5)";
+              btnDescargar.style.backdropFilter = "blur(5px)";
 
               btnDescargar.onclick = (e) => {
-                e.stopPropagation(); // Evita que la foto avance al hacer clic aquí
-                // ¡AQUÍ ESTÁ LA DESCARGA FULL RESOLUTION!
-                window.open(
-                  `https://drive.google.com/uc?export=download&id=${photoId}`
-                );
+                e.stopPropagation();
+                window.open(`https://drive.google.com/uc?export=download&id=${photoId}`);
               };
 
-              // --- BOTÓN DE FAVORITOS ---
               const btnFavorito = document.createElement("button");
               btnFavorito.style.padding = "10px 20px";
               btnFavorito.style.borderRadius = "30px";
               btnFavorito.style.border = "none";
-              btnFavorito.style.backgroundColor = "rgba(0,0,0,0.7)"; // Oscuro transparente
+              btnFavorito.style.backgroundColor = "rgba(0,0,0,0.7)";
               btnFavorito.style.color = "#fff";
-              btnFavorito.style.fontWeight = "bold";
+              btnFavorito.style.fontWeight = "400";
+              btnFavorito.style.letterSpacing = "1px";
               btnFavorito.style.cursor = "pointer";
               btnFavorito.style.backdropFilter = "blur(5px)";
 
-              // Revisamos la memoria del celular a ver si ya era favorita
-              let misFavoritos =
-                JSON.parse(localStorage.getItem("favoritos_boda_neni")) || [];
+              let misFavoritos = JSON.parse(localStorage.getItem("favoritos_boda_neni")) || [];
               let esFavorito = misFavoritos.includes(photoId);
 
-              btnFavorito.innerHTML = esFavorito
-                ? "❤️ Guardado"
-                : "🤍 Favorito";
+              btnFavorito.innerHTML = esFavorito ? (iconoCorazonRojo + " Favorito") : (iconoCorazonVacio + " Favorito");
 
               btnFavorito.onclick = (e) => {
-                e.stopPropagation(); // Evita que la foto avance
-
-                // Volvemos a leer la memoria por si hubo cambios
-                misFavoritos =
-                  JSON.parse(localStorage.getItem("favoritos_boda_neni")) || [];
+                e.stopPropagation();
+                misFavoritos = JSON.parse(localStorage.getItem("favoritos_boda_neni")) || [];
 
                 if (misFavoritos.includes(photoId)) {
-                  // Si ya era favorito, lo quitamos
                   misFavoritos = misFavoritos.filter((id) => id !== photoId);
-                  btnFavorito.innerHTML = "🤍 Favorito";
+                  btnFavorito.innerHTML = iconoCorazonVacio + " Favorito";
                 } else {
-                  // Si no era, lo agregamos
                   misFavoritos.push(photoId);
-                  btnFavorito.innerHTML = "❤️ Guardado";
+                  btnFavorito.innerHTML = iconoCorazonRojo + " Favorito";
                 }
-
-                // Guardamos la nueva lista en el celular de la clienta
-                localStorage.setItem(
-                  "favoritos_boda_neni",
-                  JSON.stringify(misFavoritos)
-                );
+                localStorage.setItem("favoritos_boda_neni", JSON.stringify(misFavoritos));
               };
 
-              // Metemos los botones al contenedor y luego a la pantalla
               contenedorBotones.appendChild(btnFavorito);
               contenedorBotones.appendChild(btnDescargar);
-
-              // Se lo agregamos a la caja interna del lightbox
-              const mediaContainer = slide.querySelector(".ginner-container");
-              mediaContainer.appendChild(contenedorBotones);
+              slide.querySelector(".ginner-container").appendChild(contenedorBotones);
             }
           });
-        })
-        .catch((error) => {
-          cargandoTexto.innerText =
-            "❌ Error al cargar la galería. Verifica tu conexión.";
-          cargandoTexto.style.color = "#ff6b6b";
-        });
+      }
+
+      // --- LÓGICA DE LOS BOTONES GLOBALES (DEBAJO DE PORTADA) ---
+      btnDescargarTodo.onclick = () => {
+        window.open(`https://drive.google.com/drive/folders/${ID_CARPETA_CLIENTE}`, "_blank");
+      };
+
+      btnVerFavoritos.onclick = () => {
+        const iconoRegreso = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>`;
+        const iconoCorazon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
+
+        if (!mostrandoFavoritos) {
+          let misFavoritos = JSON.parse(localStorage.getItem("favoritos_boda_neni")) || [];
+          
+          if (misFavoritos.length === 0) {
+              alert("Aún no tienes fotos guardadas en favoritos. ¡Abre una foto y dale al corazón!");
+              return;
+          }
+
+          let fotosFiltradas = todasLasFotos.filter(foto => misFavoritos.includes(foto.id));
+          
+          mostrandoFavoritos = true;
+          btnVerFavoritos.innerHTML = iconoRegreso + " Ver Todas las Fotos";
+          btnVerFavoritos.classList.add("activo");
+          
+          iniciarGaleria(fotosFiltradas); 
+        } else {
+          mostrandoFavoritos = false;
+          btnVerFavoritos.innerHTML = iconoCorazon + " Ver Favoritos";
+          btnVerFavoritos.classList.remove("activo");
+          
+          iniciarGaleria(todasLasFotos); 
+        }
+      };
     </script>
   </body>
 </html>
