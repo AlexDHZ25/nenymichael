@@ -1,30 +1,30 @@
 /* Importamos la fuente elegante Lato */
 @import url("https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap");
 
+/* --- 1. Fondo Blanco y Texto Gris --- */
 body {
   font-family: "Lato", sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #ffffff;
-  color: #ffffff;
+  background-color: #ffffff; /* Blanco puro */
+  color: #555555; /* Gris elegante para lectura */
   text-align: center;
 }
 
 .header-galeria {
   position: relative;
   width: 100%;
-  /* Altura adaptable: 100% de la pantalla menos el espacio de la cuadrícula, ideal 60% al 80% del viewport */
   height: 65vh;
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Centra el texto verticalmente */
-  align-items: center; /* Centra el texto horizontalmente */
+  justify-content: center;
+  align-items: center;
   text-align: center;
   overflow: hidden;
-  background-color: #1a1a1a; /* Fondo oscuro por defecto */
+  background-color: #ffffff; 
 }
 
-/* 🪄 MAGIA 1: Insertamos tu foto de portada */
+/* Foto de portada */
 .header-galeria::before {
   content: "";
   position: absolute;
@@ -32,14 +32,13 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  /* Enlace directo de alta resolución a tu foto en Google */
   background-image: url("https://drive.google.com/thumbnail?id=1iD3PQOm1rYQKySC5wBRjQlqPGdFoQJ99&sz=w1920");
-  background-size: cover; /* Asegura que la foto llene todo el espacio sin deformarse */
-  background-position: center center; /* Centra el encuadre en la pareja */
-  z-index: 1; /* Pone la foto en la capa base */
+  background-size: cover;
+  background-position: center center;
+  z-index: 1;
 }
 
-/* 🪄 MAGIA 2: Sombra oscura (Overlay) para legibilidad */
+/* El degradado que termina en BLANCO */
 .header-galeria::after {
   content: "";
   position: absolute;
@@ -47,76 +46,116 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  /* Gradiente oscuro sutil: más fuerte abajo para que el texto resalte */
   background: linear-gradient(
     to bottom,
-    rgba(26, 26, 26, 0.2) 0%,
-    rgba(26, 26, 26, 0.8) 100%
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 1) 100%
   );
-  z-index: 2; /* Pone la sombra encima de la foto */
+  z-index: 2;
 }
 
-/* Los textos deben estar sobre el overlay */
+/* Textos sobre la portada */
 .header-galeria .titulo,
 .header-galeria .subtitulo {
   position: relative;
-  z-index: 3; /* Pone el texto en la capa más alta */
+  z-index: 3;
   margin: 0;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8); /* Sombra de texto para extra contraste */
 }
 
+/* --- 2. Tipografía Editorial (Gris) --- */
 .titulo {
   font-family: "Cormorant Garamond", serif;
-  font-size: 40px;
-  font-optical-sizing: auto;
+  font-size: 42px;
   font-weight: 300;
-  font-style: normal;
   margin-bottom: 10px;
-  color: #ffffff;
+  color: #333333; /* Gris oscuro casi negro, muy sofisticado */
 }
 
 .subtitulo {
   font-size: 14px;
-  color: #aaaaaa;
-  letter-spacing: 1px;
+  color: #777777; /* Gris medio */
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
-/* Estilo de Cuadrícula tipo Masonry/Pixieset */
+/* --- 3. Barra de Acciones Globales (Botones claros) --- */
+.barra-acciones {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 20px 40px 20px;
+  background-color: #ffffff; 
+  flex-wrap: wrap; 
+}
+
+.btn-accion {
+  padding: 10px 26px;
+  border-radius: 30px;
+  border: 1px solid #cccccc; 
+  background-color: transparent;
+  color: #555555; 
+  font-family: 'Lato', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-accion:hover {
+  border-color: #777777;
+  color: #333333;
+  background-color: #fafafa;
+}
+
+.btn-accion.activo {
+  background-color: #555555;
+  color: #ffffff;
+  border-color: #555555;
+}
+
+/* --- 4. Estilo de Cuadrícula Masonry --- */
 .grid-galeria {
-  display: flex; /* Alinea las columnas lado a lado */
-  gap: 5px; /* Espacio entre columnas */
+  display: flex;
+  gap: 5px;
   padding: 5px;
   max-width: 1200px;
   margin: 0 auto;
 }
 
 .columna-masonry {
-  flex: 1; /* Hace que todas las columnas midan lo mismo */
+  flex: 1;
   display: flex;
-  flex-direction: column; /* Apila las fotos hacia abajo dentro de su columna */
-  gap: 5px; /* Espacio entre las fotos de arriba y abajo */
+  flex-direction: column;
+  gap: 5px;
 }
 
 .foto-link {
   width: 100%;
   overflow: hidden;
-  background-color: #333;
+  background-color: #f4f4f4; /* Gris ultra claro mientras carga la foto */
 }
 
 .foto-img {
   width: 100%;
-  height: auto; /* Mantiene la proporción original (vertical/horizontal) */
+  height: auto;
   display: block;
   transition: transform 0.3s ease;
 }
-/* Efecto hover: Pequeño zoom al pasar el mouse (solo visible en PC) */
+
 .foto-link:hover .foto-img {
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 
 .cargando {
   padding: 50px;
-  color: #d4af37;
-  font-size: 16px;
-  font-weight: 700;
+  color: #777777;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 1px;
 }
