@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Neny&Michael | AlexDHZ</title>
+    <title>Galería Privada | Entregables VIP</title>
 
     <link
       rel="stylesheet"
@@ -16,7 +16,7 @@
   </head>
   <body>
     <div class="header-galeria">
-      <div class="titulo">Neny & Michael</div>
+      <div class="titulo">Neny y Michael</div>
       <div class="subtitulo">29-12-25</div>
     </div>
 
@@ -37,10 +37,7 @@
     <script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
 
     <script>
-      const SCRIPT_UNIVERSAL = "https://script.google.com/macros/s/AKfycbxeMqsw0aAJ8f6yDc_xNkb_akwUIMCVd8TvuS3LRSyvl0JRbQWTWo1RfQ3LD9whiA3J/exec";
-      const ID_CARPETA_CLIENTE = "1ewHBjTwgO4TouKRZUYW-eiUT2iouLdPl";
-      const GOOGLE_SCRIPT_URL = SCRIPT_UNIVERSAL + "?idCarpeta=" + ID_CARPETA_CLIENTE;
-
+      
       const contenedor = document.getElementById("contenedor-galeria");
       const cargandoTexto = document.getElementById("cargando-texto");
       const barraAcciones = document.getElementById("barra-acciones");
@@ -58,7 +55,8 @@
       let columnasGlobales = [];
 
       // 1. Cargamos las fotos desde Google Script
-      fetch(GOOGLE_SCRIPT_URL)
+      // 1. 🚀 MOTOR TURBO: Cargamos las fotos desde tu archivo estático al instante
+      fetch('fotos.json')
         .then((response) => response.json())
         .then((fotos) => {
           cargandoTexto.style.display = "none";
