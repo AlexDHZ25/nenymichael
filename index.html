@@ -73,7 +73,8 @@
             const miniatura = `https://drive.google.com/thumbnail?id=${foto.id}&sz=w400`;
 
             // CORRECCIÓN 2: Usamos el enlace anti-bloqueo directo a la foto (descarga directa)
-            const altaRes = `https://drive.google.com/uc?export=download&id=${foto.id}`;
+            const altaRes = `https://drive.google.com/uc?export=download&id=${foto.id}&sz=w1600`;
+
 
             const enlace = document.createElement("a");
             enlace.href = altaRes;
