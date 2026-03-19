@@ -34,7 +34,7 @@ body {
   height: 100%;
   background-image: url("https://drive.google.com/thumbnail?id=1iD3PQOm1rYQKySC5wBRjQlqPGdFoQJ99&sz=w1920");
   background-size: cover;
-  background-position: center center;
+  background-position: top center;
   z-index: 1;
 }
 
