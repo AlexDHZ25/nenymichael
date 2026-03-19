@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Galería Privada | Entregables VIP</title>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css"
+    />
+    <!--Descargar de google fonts cormoant-->
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300&display=swap");
+    </style>
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="header-galeria">
+      <div class="titulo">Neni y Michael</div>
+      <div class="subtitulo">Poner Fecha</div>
+    </div>
+
+    <div id="cargando-texto" class="cargando">⏳ Cargando recuerdos...</div>
+    <div class="grid-galeria" id="contenedor-galeria"></div>
+
+    <script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
+
+    <script>
+      // 1. TU ENLACE UNIVERSAL
+      const SCRIPT_UNIVERSAL =
+        "https://script.google.com/macros/s/AKfycbxeMqsw0aAJ8f6yDc_xNkb_akwUIMCVd8TvuS3LRSyvl0JRbQWTWo1RfQ3LD9whiA3J/exec";
+
+      // 2. ⚠️ EL ID DE LA CARPETA DE ESTA BODA EN GOOGLE DRIVE
+      const ID_CARPETA_CLIENTE = "1ewHBjTwgO4TouKRZUYW-eiUT2iouLdPl";
+
+      const GOOGLE_SCRIPT_URL =
+        SCRIPT_UNIVERSAL + "?idCarpeta=" + ID_CARPETA_CLIENTE;
+
+      const contenedor = document.getElementById("contenedor-galeria");
+      const cargandoTexto = document.getElementById("cargando-texto");
+
+      fetch(GOOGLE_SCRIPT_URL)
+        .then((response) => response.json())
+        .then((fotos) => {
+          cargandoTexto.style.display = "none";
+
+          // Comprobamos primero si hay fotos para evitar que la página se rompa
+          if (!fotos || fotos.length === 0) {
+            contenedor.innerHTML =
+              "<p style='width: 100%; font-size: 14px; color: #ccc;'>Aún no hay fotos en esta carpeta.</p>";
+            return;
+          }
+
+          // CORRECCIÓN 1: Invertimos el orden DESPUÉS de confirmar que sí hay fotos
+          fotos.reverse();
+
+          // Calculamos las columnas (2 en celular, 3 en pantallas más grandes)
+          let numColumnas = window.innerWidth > 768 ? 3 : 2;
+          let columnas = [];
+
+          // Creamos las columnas HTML
+          for (let i = 0; i < numColumnas; i++) {
+            let col = document.createElement("div");
+            col.className = "columna-masonry";
+            contenedor.appendChild(col);
+            columnas.push(col);
+          }
+
+          // Repartimos las fotos de izquierda a derecha
+          fotos.forEach((foto, index) => {
+            const miniatura = `https://drive.google.com/thumbnail?id=${foto.id}&sz=w400`;
+
+            // CORRECCIÓN 2: Usamos el enlace anti-bloqueo directo a la foto (descarga directa)
+            const altaRes = `https://drive.google.com/uc?export=download&id=${foto.id}`;
+
+            const enlace = document.createElement("a");
+            enlace.href = altaRes;
+            enlace.className = "foto-link glightbox";
+            enlace.setAttribute("data-gallery", "galeria-boda");
+            enlace.setAttribute("data-type", "image");
+            enlace.setAttribute("data-id", foto.id); // ⬅️ NUEVO: Guardamos el ID secreto
+
+            const img = document.createElement("img");
+            img.src = miniatura;
+            img.className = "foto-img";
+            img.loading = "lazy";
+            img.alt = "Foto del evento";
+
+            enlace.appendChild(img);
+
+            // Asignamos la foto a su columna correspondiente (Izquierda a Derecha)
+            let turnoColumna = index % numColumnas;
+            columnas[turnoColumna].appendChild(enlace);
+          });
+
+          // Iniciamos GLightbox
+          const lightbox = GLightbox({
+            touchNavigation: true,
+            loop: true,
+            zoomable: false, // Apagamos el zoom para que el clic avance
+          });
+
+          // Función: Clic para avanzar a la siguiente foto
+          // Función: Clic para avanzar y Botones Extra
+          lightbox.on("slide_after_load", (data) => {
+            const slide = data.slideNode;
+
+            // 1. Clic en la foto para avanzar
+            const imagenAbierta = slide.querySelector(".gslide-media img");
+            if (imagenAbierta) {
+              imagenAbierta.style.cursor = "pointer";
+              imagenAbierta.onclick = function () {
+                lightbox.nextSlide();
+              };
+            }
+
+            // 2. Extraemos el ID de esta foto específica
+            const photoId = data.trigger.getAttribute("data-id");
+
+            // 3. Verificamos si ya pusimos los botones para no duplicarlos
+            if (!slide.querySelector(".botones-vip")) {
+              // Contenedor de nuestros botones
+              const contenedorBotones = document.createElement("div");
+              contenedorBotones.className = "botones-vip";
+              contenedorBotones.style.position = "absolute";
+              contenedorBotones.style.bottom = "30px";
+              contenedorBotones.style.left = "0";
+              contenedorBotones.style.width = "100%";
+              contenedorBotones.style.display = "flex";
+              contenedorBotones.style.justifyContent = "center";
+              contenedorBotones.style.gap = "15px";
+              contenedorBotones.style.zIndex = "99999";
+
+              // --- BOTÓN DE DESCARGA ---
+              const btnDescargar = document.createElement("button");
+              btnDescargar.innerHTML = "⬇️ Descargar";
+              btnDescargar.style.padding = "10px 20px";
+              btnDescargar.style.borderRadius = "30px";
+              btnDescargar.style.border = "none";
+              btnDescargar.style.backgroundColor = "#d4af37"; // Dorado
+              btnDescargar.style.color = "#1a1a1a";
+              btnDescargar.style.fontWeight = "bold";
+              btnDescargar.style.cursor = "pointer";
+              btnDescargar.style.boxShadow = "0 4px 10px rgba(0,0,0,0.5)";
+
+              btnDescargar.onclick = (e) => {
+                e.stopPropagation(); // Evita que la foto avance al hacer clic aquí
+                // Forzamos la descarga desde Google Drive
+                window.open(
+                  `https://drive.google.com/uc?export=download&id=${photoId}`
+                );
+              };
+
+              // --- BOTÓN DE FAVORITOS ---
+              const btnFavorito = document.createElement("button");
+              btnFavorito.style.padding = "10px 20px";
+              btnFavorito.style.borderRadius = "30px";
+              btnFavorito.style.border = "none";
+              btnFavorito.style.backgroundColor = "rgba(0,0,0,0.7)"; // Oscuro transparente
+              btnFavorito.style.color = "#fff";
+              btnFavorito.style.fontWeight = "bold";
+              btnFavorito.style.cursor = "pointer";
+              btnFavorito.style.backdropFilter = "blur(5px)";
+
+              // Revisamos la memoria del celular a ver si ya era favorita
+              let misFavoritos =
+                JSON.parse(localStorage.getItem("favoritos_boda_neni")) || [];
+              let esFavorito = misFavoritos.includes(photoId);
+
+              btnFavorito.innerHTML = esFavorito
+                ? "❤️ Guardado"
+                : "🤍 Favorito";
+
+              btnFavorito.onclick = (e) => {
+                e.stopPropagation(); // Evita que la foto avance
+
+                // Volvemos a leer la memoria por si hubo cambios
+                misFavoritos =
+                  JSON.parse(localStorage.getItem("favoritos_boda_neni")) || [];
+
+                if (misFavoritos.includes(photoId)) {
+                  // Si ya era favorito, lo quitamos
+                  misFavoritos = misFavoritos.filter((id) => id !== photoId);
+                  btnFavorito.innerHTML = "🤍 Favorito";
+                } else {
+                  // Si no era, lo agregamos
+                  misFavoritos.push(photoId);
+                  btnFavorito.innerHTML = "❤️ Guardado";
+                }
+
+                // Guardamos la nueva lista en el celular de la clienta
+                localStorage.setItem(
+                  "favoritos_boda_neni",
+                  JSON.stringify(misFavoritos)
+                );
+              };
+
+              // Metemos los botones al contenedor y luego a la pantalla
+              contenedorBotones.appendChild(btnFavorito);
+              contenedorBotones.appendChild(btnDescargar);
+
+              // Se lo agregamos a la caja interna del lightbox
+              const mediaContainer = slide.querySelector(".ginner-container");
+              mediaContainer.appendChild(contenedorBotones);
+            }
+          });
+        })
+        .catch((error) => {
+          cargandoTexto.innerText =
+            "❌ Error al cargar la galería. Verifica tu conexión.";
+          cargandoTexto.style.color = "#ff6b6b";
+        });
+    </script>
+  </body>
+</html>
