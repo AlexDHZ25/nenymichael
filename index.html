@@ -9,7 +9,6 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css"
     />
-    <!--Descargar de google fonts cormoant-->
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300&display=swap");
     </style>
@@ -53,7 +52,7 @@
             return;
           }
 
-          // CORRECCIÓN 1: Invertimos el orden DESPUÉS de confirmar que sí hay fotos
+          // Invertimos el orden DESPUÉS de confirmar que sí hay fotos
           fotos.reverse();
 
           // Calculamos las columnas (2 en celular, 3 en pantallas más grandes)
@@ -72,16 +71,16 @@
           fotos.forEach((foto, index) => {
             const miniatura = `https://drive.google.com/thumbnail?id=${foto.id}&sz=w400`;
 
-            // CORRECCIÓN 2: Usamos el enlace anti-bloqueo directo a la foto (descarga directa)
-            const altaRes = `https://drive.google.com/uc?export=download&id=${foto.id}&sz=w1600`;
-
+            // ⬅️ ¡AQUÍ ESTÁ LA MAGIA CORREGIDA! 
+            // Esto usa la imagen pura a 1600px para que el Lightbox la pueda MOSTRAR súper rápido
+            const altaRes = `https://drive.google.com/thumbnail?id=${foto.id}&sz=w1600`;
 
             const enlace = document.createElement("a");
             enlace.href = altaRes;
             enlace.className = "foto-link glightbox";
             enlace.setAttribute("data-gallery", "galeria-boda");
             enlace.setAttribute("data-type", "image");
-            enlace.setAttribute("data-id", foto.id); // ⬅️ NUEVO: Guardamos el ID secreto
+            enlace.setAttribute("data-id", foto.id); // Guardamos el ID secreto
 
             const img = document.createElement("img");
             img.src = miniatura;
@@ -103,7 +102,6 @@
             zoomable: false, // Apagamos el zoom para que el clic avance
           });
 
-          // Función: Clic para avanzar a la siguiente foto
           // Función: Clic para avanzar y Botones Extra
           lightbox.on("slide_after_load", (data) => {
             const slide = data.slideNode;
@@ -148,7 +146,7 @@
 
               btnDescargar.onclick = (e) => {
                 e.stopPropagation(); // Evita que la foto avance al hacer clic aquí
-                // Forzamos la descarga desde Google Drive
+                // ¡AQUÍ ESTÁ LA DESCARGA FULL RESOLUTION!
                 window.open(
                   `https://drive.google.com/uc?export=download&id=${photoId}`
                 );
