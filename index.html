@@ -254,8 +254,14 @@
       }
 
       // --- LÓGICA DE LOS BOTONES GLOBALES (DEBAJO DE PORTADA) ---
+      
+      // Acción: Descargar el ZIP completo directamente
       btnDescargarTodo.onclick = () => {
-        window.open(`https://drive.google.com/drive/folders/${ID_CARPETA_CLIENTE}`, "_blank");
+        // ⚠️ PEGA AQUÍ EL ID DE TU ARCHIVO .ZIP
+        const ID_DEL_ZIP = "AQUI_PEGA_EL_ID_DE_TU_ARCHIVO_ZIP"; 
+        
+        // Esto fuerza la descarga instantánea del archivo
+        window.open(`https://drive.google.com/uc?export=download&id=${ID_DEL_ZIP}`, "_blank");
       };
 
       btnVerFavoritos.onclick = () => {
